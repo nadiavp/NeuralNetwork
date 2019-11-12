@@ -1,0 +1,73 @@
+#pytorch tests
+import numpy as np 
+import xlrd
+import torch
+
+dtype = torch.float
+#device = torch.device("cpu")
+device = torch.device("cuda:0")
+
+
+load_e = []
+load_h = []
+load_c = []
+t_db = []
+irrad = []
+
+wb = xlrd.open_workbook('Campus_loads_weather.xlsx')
+sheet = wb.sheet_by_index(0)
+inputs= torch.zeros(sheet.nrows-3,5, device=device, dtype=dtype)
+for row in range(2,sheet.nrows-1):
+    inputs[row-2,0] = sheet.cell_value(row,1)/sheet.cell_value(1,6)#E_dem
+    inputs[row-2,1] = sheet.cell_value(row,2)/sheet.cell_value(1,7)#H_dem
+    inputs[row-2,2] = sheet.cell_value(row,3)/sheet.cell_value(1,8)#C_dem
+    inputs[row-2,3] = sheet.cell_value(row,4)/sheet.cell_value(1,9)#Temp_db_C
+    inputs[row-2,4] = sheet.cell_value(row,5)/sheet.cell_value(1,10)#Direct_normal_irradiance
+    # load_e.append(row)
+    # load_h.append(row[1])
+    # load_c.append(row[2])
+    # t_db.append(row[3])
+    # irrad.append(row[4])
+    # inputs.append(row)
+
+print('inputs read')
+
+wb = xlrd.open_workbook('Campus_MI_18component.xlsx')
+sheet = wb.sheet_by_index(0)
+disp = torch.zeros(sheet.nrows-2,14, device=device, dtype=dtype)
+for row in range(1,sheet.nrows-1):
+    r = row-1
+    disp[r,0] = sheet.cell_value(row,2)/7000#GT1
+    disp[r,1] = sheet.cell_value(row,3)/5000#GT2
+    disp[r,2] = sheet.cell_value(row,4)/2000#FC1
+    disp[r,3] = sheet.cell_value(row,5)/2000#FC2
+    disp[r,4] = sheet.cell_value(row,6)/500#sGT
+    disp[r,5] = sheet.cell_value(row,7)/1500#Diesel
+    disp[r,6] = sheet.cell_value(row,8)/20000#Heater
+    disp[r,7] = sheet.cell_value(row,9)/10000#chiller1
+    disp[r,8] = sheet.cell_value(row,10)/10000#chiller2
+    disp[r,9] = sheet.cell_value(row,11)/7500#small Chiller1
+    disp[r,10] = sheet.cell_value(row,12)/7500#small Chiller2
+    disp[r,11] = sheet.cell_value(row,13)/30000#battery
+    disp[r,12] = sheet.cell_value(row,14)/75000#hot water tank
+    disp[r,13] = sheet.cell_value(row,15)/20000#cold water tank
+
+print('outputs read')
+
+
+# disp = []
+# with open('Campus_MI_18component.xlsx') as csvfile:
+#     dispreader = csv.reader(csvfile)
+#     for row in loadreader:
+#         disp.append(row)
+
+#batch size, input dimension hidden dimension, output dimension
+N, D_in, H, D_out = len(inputs[:,0]), len(inputs[0,:]), int(np.ceil(len(inputs[0,:])+len(disp[0,:])/2)), len(disp[0,:])
+
+x = inputs
+y = disp
+w1 = torch.randn(D_in, H, device=device, dtype=dtype, requires_grad=True)
+w3 = torch.randn(H, D_out, device=device, dtype=dtype, requires_grad=True)
+w2 = torch.randn(H,H, device=device, dtype=dtype, requires_grad=True)
+
+learning_rate = 1e-6

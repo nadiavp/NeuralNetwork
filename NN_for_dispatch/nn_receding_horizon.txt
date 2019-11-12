@@ -1,0 +1,15 @@
+# dispatch the neural network in a receding horizon
+# train NN
+
+# run receding horizon dispatch
+while t < ndisps:
+
+# update the forecast
+
+# solve nn for all timesteps in horizon
+
+#record horizon disp, and implemented first timestep disp
+
+#output to csv's
+
+def fire_ANN(model, un_scaled_inputs):
